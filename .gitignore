@@ -1,0 +1,6 @@
+dataset/
+env/
+__pycache__
+.vscode/
+Trained_Model_1/
+training_plots_1/
