@@ -57,6 +57,7 @@ class MultiHeadAttention(nn.Module):
 
         # Score placeholder
         self._scores = None
+        self._scores = 0
 
     def forward(self,
                 query: torch.Tensor,

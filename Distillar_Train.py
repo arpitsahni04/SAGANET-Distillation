@@ -23,38 +23,38 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Distil:
-    def __init__ (self,opt,teacher_net_trained= None):
-        
-        self.teacher_gen =  Decoder(opt.point_scales_list[0], opt.crop_point_num) # set teacher gen to eval mode
-        state_dict  = torch.load(teacher_net_trained,map_location="cpu")
-        self.teacher_gen.load_state_dict(state_dict, strict=False)
-        self.teacher_gen.eval()
+	def __init__ (self,opt,teacher_net_trained):
+		
+		self.teacher_gen =  Decoder(opt.point_scales_list[0], opt.crop_point_num) # set teacher gen to eval mode
+		state_dict  = torch.load(teacher_net_trained,map_location="cpu")
+		self.teacher_gen.load_state_dict(state_dict, strict=False)
+		self.teacher_gen.eval()
 
-        self.Student_gen =  Student_SAGANET(opt.point_scales_list[0], opt.crop_point_num)
-        self.Discriminator = D_net(opt.crop_point_num)
-        self.alpha = opt.alpha_kd
-        self.Student_Loss = PointLoss()
-        self.DistillerLoss =  LatentDistiller_Loss() # Cosine Distance
-        self.opt = opt
+		self.Student_gen =  Student_SAGANET(opt.point_scales_list[0], opt.crop_point_num)
+		self.Discriminator = D_net(opt.crop_point_num)
+		self.alpha = opt.alpha_kd
+		self.Student_Loss = PointLoss()
+		self.DistillerLoss =  LatentDistiller_Loss() # Cosine Distance
+		self.opt = opt
 
-            
-    def Distill(self,resume_epoch,train_loader): 
-        ''' 
-        training loop for the distiller
-        '''
-        # x,y = data
-        
-        # Forward Pass of Teacher
-        # teacher_latent = self.teacher(x)
-        
-        # Forward pass of Studetn for Latent
-        # get student_latent = 
-        
-        # need to normalize the losses 
-        # total_loss =  self.alpha * self.Student_Loss() + \
-        #             (1-self.alpha)*self.DistillerLoss(student_latent,teacher_latent)   
+			
+	def Distill(self,resume_epoch,train_loader): 
+		''' 
+		training loop for the distiller
+		'''
+		# x,y = data
+		
+		# Forward Pass of Teacher
+		# teacher_latent = self.teacher(x)
+		
+		# Forward pass of Studetn for Latent
+		# get student_latent = 
+		
+		# need to normalize the losses 
+		# total_loss =  self.alpha * self.Student_Loss() + \
+		#             (1-self.alpha)*self.DistillerLoss(student_latent,teacher_latent)   
 def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)     
+	return sum(p.numel() for p in model.parameters() if p.requires_grad)     
 
 def weights_init_normal(m):
 	classname = m.__class__.__name__
@@ -70,150 +70,151 @@ def weights_init_normal(m):
 		torch.nn.init.constant_(m.bias.data, 0.0)
 
 if __name__=="__main__":
-    
-    config = Configuration('train')
-    torch.backends.cudnn.enabled = False
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataroot', default='dataset/train', help='path to dataset')
-    parser.add_argument('--trainingplots',
-                        default='',
-                        help='path to training plots')
-    parser.add_argument('--workers', type=int, default=4, help='number of data loading workers')
-    parser.add_argument('--batchSize', type=int, default=6, help='input batch size')
-    parser.add_argument('--pnum', type=int, default=config.prior_num, help='the point number of a sample')
-    parser.add_argument('--crop_point_num', type=int, default=config.crop_point_num, help='0 means do not use else use with this weight')
-    parser.add_argument('--niter', type=int, default=120, help='number of epochs to train for')
-    parser.add_argument('--weight_decay', type=float, default=0.001)
-    parser.add_argument('--learning_rate', default=0.0002, type=float, help='learning rate in training')
-    parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.9')
-    parser.add_argument('--cuda', type=bool, default=True, help='enables cuda')
-    parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
-    parser.add_argument('--manualSeed', type=int, help='manual seed')
-    parser.add_argument('--drop', type=float, default=0.2)
-    parser.add_argument('--num_scales', type=int, default=2, help='number of scales')
-    parser.add_argument('--point_scales_list', type=list, default=[2048, 1024], help='number of points in each scales')
-    parser.add_argument('--each_scales_size', type=int, default=1, help='each scales size')
-    parser.add_argument('--wtl2', type=float, default=0.99, help='0 means do not use else use with this weight')
-    parser.add_argument('--wtemd', type=int, default=10, help='EMD weights')
-    parser.add_argument('--cropmethod', default='random_center', help='random|center|random_center')
-    parser.add_argument('--netG', default='', help="put in gen_net.pth location to continue training)")
-    parser.add_argument('--netD', default='', help="put in dis_net.pth location to continue training)")
-    parser.add_argument('--cloud_size', type=int, default=config.partial_pcd_num, help='0 means do not use else use with this weight')
-    parser.add_argument('--class_choice', default='Table', help='choice of class')    # [Car, Airplane, Bag, Cap, Chair, Guitar, Lamp, Laptop, Motorbike, Mug, Pistol, Skateboard, Table]
-    parser.add_argument('--alpha_kd', default=0.3, help='Alpha to weigh distillation loss')
-    parser.add_argument('--save_model_dir', default="Trained_Model_1", help='Path to Trained Teacher Network')
+	
+	config = Configuration('train')
+	torch.backends.cudnn.enabled = False
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--dataroot', default='dataset/train', help='path to dataset')
+	parser.add_argument('--trainingplots',
+						default='',
+						help='path to training plots')
+	parser.add_argument('--workers', type=int, default=4, help='number of data loading workers')
+	parser.add_argument('--batchSize', type=int, default=6, help='input batch size')
+	parser.add_argument('--pnum', type=int, default=config.prior_num, help='the point number of a sample')
+	parser.add_argument('--crop_point_num', type=int, default=config.crop_point_num, help='0 means do not use else use with this weight')
+	parser.add_argument('--niter', type=int, default=120, help='number of epochs to train for')
+	parser.add_argument('--weight_decay', type=float, default=0.001)
+	parser.add_argument('--learning_rate', default=0.0002, type=float, help='learning rate in training')
+	parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.9')
+	parser.add_argument('--cuda', type=bool, default=True, help='enables cuda')
+	parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
+	parser.add_argument('--manualSeed', type=int, help='manual seed')
+	parser.add_argument('--drop', type=float, default=0.2)
+	parser.add_argument('--num_scales', type=int, default=2, help='number of scales')
+	parser.add_argument('--point_scales_list', type=list, default=[2048, 1024], help='number of points in each scales')
+	parser.add_argument('--each_scales_size', type=int, default=1, help='each scales size')
+	parser.add_argument('--wtl2', type=float, default=0.99, help='0 means do not use else use with this weight')
+	parser.add_argument('--wtemd', type=int, default=10, help='EMD weights')
+	parser.add_argument('--cropmethod', default='random_center', help='random|center|random_center')
+	parser.add_argument('--netG', default='', help="put in gen_net.pth location to continue training)")
+	parser.add_argument('--netD', default='', help="put in dis_net.pth location to continue training)")
+	parser.add_argument('--cloud_size', type=int, default=config.partial_pcd_num, help='0 means do not use else use with this weight')
+	parser.add_argument('--class_choice', default='Table', help='choice of class')    # [Car, Airplane, Bag, Cap, Chair, Guitar, Lamp, Laptop, Motorbike, Mug, Pistol, Skateboard, Table]
+	parser.add_argument('--alpha_kd', default=0.3, help='Alpha to weigh distillation loss')
+	parser.add_argument('--save_model_dir', default="Trained_Model_1", help='Path to Trained Teacher Network')
 
-    writer = SummaryWriter("runs")
-    MIN_dic = {'Car': 0.3,
-            'Airplane': 0.16,
-            'Bag': 0.5,
-            'Cap': 1.5,
-            'Chair': 0.25,
-            'Guitar': 0.1,
-            'Lamp': 1.5,
-            'Laptop': 0.17,
-            'Motorbike': 0.35,
-            'Mug': 0.35,
-            'Pistol': 0.4,
-            'Skateboard': 0.4,
-            'Table': 0.4}
+	writer = SummaryWriter("runs")
+	MIN_dic = {'Car': 0.3,
+			'Airplane': 0.16,
+			'Bag': 0.5,
+			'Cap': 1.5,
+			'Chair': 0.25,
+			'Guitar': 0.1,
+			'Lamp': 1.5,
+			'Laptop': 0.17,
+			'Motorbike': 0.35,
+			'Mug': 0.35,
+			'Pistol': 0.4,
+			'Skateboard': 0.4,
+			'Table': 0.4}
 
 
-    opt = parser.parse_args()
-    MIN =  MIN_dic[opt.class_choice]
+	opt = parser.parse_args()
+	MIN =  MIN_dic[opt.class_choice]
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    USE_CUDA = True
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # load trained teacher model
-    teacher_path = os.path.join(opt.save_model_dir, 'gen_net_Table_Attention110.pth') # find and save model in checkpoints
-    
-    Distiller = Distil(opt,teacher_path)
-    # sys.exit()
-    cudnn.benchmark = True  # faster runtime
-    resume_epoch = 0
+	BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+	USE_CUDA = True
+	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+	# load trained teacher model
+	teacher_path = os.path.join(opt.save_model_dir, 'gen_net_Table_Attention110.pth') # find and save model in checkpoints
+	
+	Distiller = Distil(opt,teacher_path)
+	# sys.exit()
+	cudnn.benchmark = True  # faster runtime
+	resume_epoch = 0
 
-    count_student = count_parameters(Distiller.Student_gen) 
-    count_teacher = count_parameters(Distiller.teacher_gen) 
-  
-    print('number of parameters in teacher ', count_teacher)
-    print('number of parameters in student', count_student)
-    writer = SummaryWriter("runs/")
-    writer.add_graph(model, images.to(device))
+	count_student = count_parameters(Distiller.Student_gen) 
+	count_teacher = count_parameters(Distiller.teacher_gen) 
+	
+	print('number of parameters in teacher ', count_teacher)
+	print('number of parameters in student', count_student)
+	print("Percentage Reduction in Parameters",(count_teacher-count_student)*100/count_teacher)
  
-    if USE_CUDA:
-        print("Using", torch.cuda.device_count(), "GPUs")
-        Student_gen = torch.nn.DataParallel(Distiller.Student_gen)
-        Student_gen.to(device)
-        Student_gen.apply(weights_init_normal)
-        dis_net = torch.nn.DataParallel(Distiller.Discriminator)
-        dis_net.to(device)
-        dis_net.apply(weights_init_normal)
-        Distiller.teacher_gen.to(device)
-        
-    if opt.netG != '':
-        Student_gen.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'])
-        resume_epoch = torch.load(opt.netG)['epoch']
-    if opt.netD != '':
-        dis_net.load_state_dict(torch.load(opt.netD, map_location=lambda storage, location: storage)['state_dict'])
-        resume_epoch = torch.load(opt.netD)['epoch']
+	if USE_CUDA:
+		print("Using", torch.cuda.device_count(), "GPUs")
+		Student_gen = torch.nn.DataParallel(Distiller.Student_gen)
+		Student_gen.to(device)
+		Student_gen.apply(weights_init_normal)
+		dis_net = torch.nn.DataParallel(Distiller.Discriminator)
+		dis_net.to(device)
+		dis_net.apply(weights_init_normal)
+		Distiller.teacher_gen.to(device)
+		
+	if opt.netG != '':
+		Student_gen.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'])
+		resume_epoch = torch.load(opt.netG)['epoch']
+	if opt.netD != '':
+		dis_net.load_state_dict(torch.load(opt.netD, map_location=lambda storage, location: storage)['state_dict'])
+		resume_epoch = torch.load(opt.netD)['epoch']
 
-    if opt.manualSeed is None:
-        opt.manualSeed = random.randint(1, 10000)
-    print("Random Seed: ", opt.manualSeed)
-    random.seed(opt.manualSeed)
-    torch.manual_seed(opt.manualSeed)
-    if opt.cuda:
-        torch.cuda.manual_seed_all(opt.manualSeed)
+	if opt.manualSeed is None:
+		opt.manualSeed = random.randint(1, 10000)
+	print("Random Seed: ", opt.manualSeed)
+	random.seed(opt.manualSeed)
+	torch.manual_seed(opt.manualSeed)
+	if opt.cuda:
+		torch.cuda.manual_seed_all(opt.manualSeed)
 
-    # define transforms for point cloud data
-    transforms = transforms.Compose([d_utils.PointcloudToTensor(), ])
+	# define transforms for point cloud data
+	transforms = transforms.Compose([d_utils.PointcloudToTensor(), ])
 
-    # define transforms for point cloud data
-    train_set = FullDataset("train")
-    assert train_set
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=opt.batchSize, 
-    shuffle=True, num_workers=int(opt.workers), drop_last = True)
+	# define transforms for point cloud data
+	train_set = FullDataset("train")
+	assert train_set
+	train_loader = torch.utils.data.DataLoader(train_set, batch_size=opt.batchSize, 
+	shuffle=True, num_workers=int(opt.workers), drop_last = True)
 
-    print("Trainloader length: ", len(train_loader))
-    test_set = FullDataset('test')
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=opt.batchSize, shuffle=False,
-                                              num_workers=int(opt.workers), drop_last = True)
-    print("Test loader len: ", len(test_loader))
-    writer = SummaryWriter("runs/")
-    i, data = next(iter(train_loader))
-    real_point, real_center = data
-    writer.add_graph(Student_gen, real_center)
-    writer.add_graph(Distiller.teacher_gen, real_center)
+	print("Trainloader length: ", len(train_loader))
+	test_set = FullDataset('test')
+	test_loader = torch.utils.data.DataLoader(test_set, batch_size=opt.batchSize, shuffle=False,
+											  num_workers=int(opt.workers), drop_last = True)
+	print("Test loader len: ", len(test_loader))
+	writer = SummaryWriter("runs/")
+	for i, data in enumerate(train_loader):
+		real_point, real_center = data
+		writer.add_graph(Student_gen, torch.randn(6, 2048, 3))
+		writer.add_graph(Distiller.teacher_gen, torch.randn(6, 2048, 3))
+		break
+	
 
-    # criteria
-    criterion = torch.nn.BCEWithLogitsLoss().to(device)  # discriminator loss
-    criterion_PointLoss = PointLoss().to(device)
-    criterion_PointLoss_test = PointLoss_test().to(device)
-    # criterion_layer1 = nn.MSELoss().to(device)
-    # criterion_layer2 = nn.MSELoss().to(device)
-    # criterion_layer3 = nn.MSELoss().to(device)
-    # criterion_layer4 = nn.MSELoss().to(device)
-    # criterion_expansion = expansion.expansionPenaltyModule()
-    real_label = 1
-    fake_label = 0
+	# criteria
+	criterion = torch.nn.BCEWithLogitsLoss().to(device)  # discriminator loss
+	criterion_PointLoss = PointLoss().to(device)
+	criterion_PointLoss_test = PointLoss_test().to(device)
+	# criterion_layer1 = nn.MSELoss().to(device)
+	# criterion_layer2 = nn.MSELoss().to(device)
+	# criterion_layer3 = nn.MSELoss().to(device)
+	# criterion_layer4 = nn.MSELoss().to(device)
+	# criterion_expansion = expansion.expansionPenaltyModule()
+	real_label = 1
+	fake_label = 0
 
-    # setup optimizer
-    optimizerD = torch.optim.Adam(dis_net.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-05,
-                                weight_decay=opt.weight_decay)
-    schedulerD = torch.optim.lr_scheduler.StepLR(optimizerD, step_size=40, gamma=0.2)
-    optimizerG = torch.optim.Adam(gen_net.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-05,
-                                weight_decay=opt.weight_decay)
-    schedulerG = torch.optim.lr_scheduler.StepLR(optimizerG, step_size=40, gamma=0.2)
+	# setup optimizer
+	optimizerD = torch.optim.Adam(dis_net.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-05,
+								weight_decay=opt.weight_decay)
+	schedulerD = torch.optim.lr_scheduler.StepLR(optimizerD, step_size=40, gamma=0.2)
+	optimizerG = torch.optim.Adam(Student_gen.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-05,
+								weight_decay=opt.weight_decay)
+	schedulerG = torch.optim.lr_scheduler.StepLR(optimizerG, step_size=40, gamma=0.2)
 
-    crop_point_num = int(opt.crop_point_num) #1024
-    input_cropped1 = torch.FloatTensor(opt.batchSize, opt.pnum, 3) #(6,2048,3)
-    label = torch.FloatTensor(opt.batchSize)
+	crop_point_num = int(opt.crop_point_num) #1024
+	input_cropped1 = torch.FloatTensor(opt.batchSize, opt.pnum, 3) #(6,2048,3)
+	label = torch.FloatTensor(opt.batchSize)
 
-    num_batch = len(train_set) / opt.batchSize
+	num_batch = len(train_set) / opt.batchSize
 
-    LOSS_pg, LOSS_gp = [], []
-    EPOCH = []
+	LOSS_pg, LOSS_gp = [], []
+	EPOCH = []
 
 for epoch in tqdm(resume_epoch, opt.niter):
 	if epoch < 30:
@@ -235,7 +236,7 @@ for epoch in tqdm(resume_epoch, opt.niter):
 	for i, data in enumerate(train_loader):
 		real_point, real_center = data
 		#cloud(2048), model_points(1024) # both are labels 
-  		# 50% of the points are changed real center is the resampled points 
+		  # 50% of the points are changed real center is the resampled points 
 		batch_size = real_point.size()[0]  
 		real_center = real_center.float()
 		input_cropped1 = torch.FloatTensor(batch_size, opt.pnum, 3)
@@ -261,7 +262,7 @@ for epoch in tqdm(resume_epoch, opt.niter):
 		input_cropped1 = Variable(input_cropped1, requires_grad=True)  # [24, 2048, 3]
   
 		
-        # Start Distillation()
+		# Start Distillation()
 		gen_net = gen_net.train()
 		dis_net = dis_net.train()
 		
@@ -296,15 +297,15 @@ for epoch in tqdm(resume_epoch, opt.niter):
 		# expansion_loss = torch.mean(dist)
 		# double check these dimensions
 		errG_l2 = criterion_PointLoss(torch.squeeze(fake_fine, 1), torch.squeeze(real_center, 1)) \
-		          + lam1 * criterion_PointLoss(fake_center1, # coarse channel
-		                                       real_center_key1) #+ wtl_mse * feature_loss #+ wtl_exp * expansion_loss
+				  + lam1 * criterion_PointLoss(fake_center1, # coarse channel
+											   real_center_key1) #+ wtl_mse * feature_loss #+ wtl_exp * expansion_loss
 		
 		errG = (1 - opt.wtl2) * errG_D + opt.wtl2 * errG_l2  # original # need to be readjusted. for 
 		errG.backward()
 		optimizerG.step()
 		print('Epoch[%d/%d] Batch[%d/%d] D_loss: %.4f G_loss: %.4f errG: %.4f errG_D: %.4f errG_l2: %.4f'
-		      % (epoch, opt.niter, i, len(train_loader),
-		         dis_err.data, errG, errG, errG_D.data, errG_l2))
+			  % (epoch, opt.niter, i, len(train_loader),
+				 dis_err.data, errG, errG, errG_D.data, errG_l2))
 		f = open(opt.class_choice + '_loss.txt', 'a+')
 
 	# start of testing
@@ -365,18 +366,18 @@ for epoch in tqdm(resume_epoch, opt.niter):
 		
 		if loss_pg == first_min:
 			torch.save({'epoch': epoch + 1,
-			            'state_dict': gen_net.state_dict()},
-			           'Trained_Model_1/gen_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
+						'state_dict': gen_net.state_dict()},
+					   'Trained_Model_1/gen_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
 			torch.save({'epoch': epoch + 1,
-			            'state_dict': dis_net.state_dict()},
-			           'Trained_Model_1/dis_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
+						'state_dict': dis_net.state_dict()},
+					   'Trained_Model_1/dis_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
 		elif loss_gp == second_min:
 			torch.save({'epoch': epoch + 1,
-			            'state_dict': gen_net.state_dict()},
-			           'Trained_Model_1/gen_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
+						'state_dict': gen_net.state_dict()},
+					   'Trained_Model_1/gen_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
 			torch.save({'epoch': epoch + 1,
-			            'state_dict': dis_net.state_dict()},
-			           'Trained_Model_1/dis_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
+						'state_dict': dis_net.state_dict()},
+					   'Trained_Model_1/dis_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
 		
 		print('best so far (pg): ', first_min, LOSS_gp[first_idx])
 		print('best so far (gp): ', LOSS_pg[second_idx], second_min)

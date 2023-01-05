@@ -238,7 +238,7 @@ class Decoder(nn.Module):
 		
 		x = x + x_2  # 128x4x3
 		x = x.reshape(-1, self.crop_point_num, 3)  # 512x3 Local Points
-		
+		print("Teacher Decoder Channel Shape",x_2.squeeze().shape, x.shape)
 		return x_2.squeeze(), x, conv11, conv12
 
 

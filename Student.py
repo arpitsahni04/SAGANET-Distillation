@@ -20,15 +20,15 @@ class Feature_Extractor_Student(nn.Module):
         self.k = k # ? for nearest neighbhor?
         self.emb_dims = emb_dims # output of Feature Extractor 
          # adjust intermediate
-        self.conv1 = nn.Sequential(nn.Conv2d(6, 512* scale_encoder, kernel_size=1, bias=False),
-                            nn.BatchNorm2d(512* scale_encoder),
+        self.conv1 = nn.Sequential(nn.Conv2d(6, int(128* scale_encoder), kernel_size=1, bias=False),
+                            nn.BatchNorm2d(int(128* scale_encoder)),
                             nn.LeakyReLU(negative_slope=0.2))
         
-        self.conv2 = nn.Sequential(nn.Conv2d(128, 128*4, kernel_size=1, bias=False),
-                            nn.BatchNorm2d(scale_encoder*128*4),
+        self.conv2 = nn.Sequential(nn.Conv2d(int(128*4* scale_encoder),int(128*4* scale_encoder),  kernel_size=1, bias=False),
+                            nn.BatchNorm2d(int(scale_encoder*128*4)),
                             nn.LeakyReLU(negative_slope=0.2))
-        self.conv3 =  nn.Sequential(nn.Conv2d(512 * 2, self.emb_dims, kernel_size=1, bias=False),
-                                   nn.BatchNorm2d(scale_encoder*self.emb_dims),
+        self.conv3 =  nn.Sequential(nn.Conv2d(int(512 * 2*scale_encoder), self.emb_dims, kernel_size=1, bias=False),
+                                   nn.BatchNorm2d(self.emb_dims),
                                    nn.LeakyReLU(negative_slope=0.2))
         self._attention6 = Attention(1024) # Attention Layer Unmodified
         self.maxpool = nn.MaxPool2d((1, 2048), 1)
@@ -74,14 +74,14 @@ class Student_SAGANET(nn.Module):
         self.latent_features = Encoder_Student(num_points,scale_encoder)
         
         # Coarse Layers
-        self.fc1 = nn.Linear(1024, 128 * self.crop_point_num*scale_decoder) #de/2, de = 2048
-        self.conv1_1 = torch.nn.Conv1d(self.crop_point_num* scale_decoder, 256 * scale_decoder, 1)
-        self.conv1_2 = torch.nn.Conv1d(256 * scale_decoder, int((self.crop_point_num * 3) / 128)* scale_decoder, 1) # (512,48)
+        self.fc1 = nn.Linear(1024,int( 128 * self.crop_point_num*scale_decoder)) #de/2, de = 2048
+        self.conv1_1 = torch.nn.Conv1d(int(self.crop_point_num* scale_decoder),int( 256 * scale_decoder), 1)
+        self.conv1_2 = torch.nn.Conv1d(int(256 * scale_decoder), int((self.crop_point_num * 3) / 128), 1) # (512,48)
         
         # Fine Layers
-        self.fc2 = nn.Linear(1024, 64 * 128*scale_decoder) #de/4
+        self.fc2 = nn.Linear(1024, int(64 * 128*scale_decoder)) #de/4
         # self.fc2_1 = nn.Linear(512, 64 * 128)
-        self.conv2_1 = torch.nn.Conv1d(128*scale_decoder, 6, 1)
+        self.conv2_1 = torch.nn.Conv1d(int(128*scale_decoder), 6, 1)
     
     def forward(self,x):
         # get latent features from encoder
@@ -101,4 +101,5 @@ class Student_SAGANET(nn.Module):
 
         x = x + x_2  # 128x4x3
         x = x.reshape(-1, self.crop_point_num, 3)  
+        print("Student Decoder Channel Shape",x_2.squeeze().shape, x.shape)
         return x_2.squeeze(), x, conv11, conv12
