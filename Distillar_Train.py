@@ -37,9 +37,6 @@ class Distil:
         self.DistillerLoss =  LatentDistiller_Loss() # Cosine Distance
         self.opt = opt
 
-            
-
-
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)     
 
@@ -57,7 +54,7 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 if __name__=="__main__":
-    torch.cuda.empty_cache()
+    torch.cuda.empty_cache() # clean cuda cache
     
     config = Configuration('train')
     torch.backends.cudnn.enabled = False
@@ -117,6 +114,8 @@ if __name__=="__main__":
     teacher_path = os.path.join(opt.save_model_dir, 'gen_net_Table_Attention110.pth') # find and save model in checkpoints
     
     Distiller = Distil(opt,teacher_path)
+    Distiller.teacher_gen.to(device)
+    Distiller.teacher_gen.eval()
     # sys.exit()
     cudnn.benchmark = True  # faster runtime
     resume_epoch = 0
@@ -136,7 +135,7 @@ if __name__=="__main__":
         dis_net = torch.nn.DataParallel(Distiller.Discriminator)
         dis_net.to(device)
         dis_net.apply(weights_init_normal)
-        Distiller.teacher_gen.to(device).eval()
+
         
     if opt.netG != '':
         Student_gen.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'])
@@ -168,13 +167,12 @@ if __name__=="__main__":
                                               num_workers=int(opt.workers), drop_last = True)
     print("Test loader len: ", len(test_loader))
     writer = SummaryWriter("runs/")
-    for i, data in enumerate(train_loader):
-        resampled_data, real_data = data
-        writer.add_graph(Distiller.teacher_gen, torch.randn(6, 2048, 3).to(device))
-        #writer.add_graph(Student_gen, torch.randn(6, 2048, 3).to(device))
+    # for i, data in enumerate(train_loader):
+    #     resampled_data, real_data = data
+    #     # writer.add_graph(Distiller.teacher_gen, torch.randn(6, 2048, 3).to(device))
+    #     #writer.add_graph(Student_gen, torch.randn(6, 2048, 3).to(device))
 
-        break
-    sys.exti()
+    #     break
     # criteria
     criterion = torch.nn.BCEWithLogitsLoss().to(device)  # discriminator loss
     criterion_PointLoss = PointLoss().to(device)
@@ -225,35 +223,36 @@ for epoch in tqdm(resume_epoch, opt.niter):
         wtl_exp = 0.1
     for i, data in enumerate(train_loader):
         resampled_data, real_data = data
-        #cloud(2048), model_points(1024) # both are labels 
-          # 50% of the points are changed real center is the resampled points 
+        #cloud(2048), model_points(1024) # both are labels # 50% of the points are changed real center is the resampled points 
         batch_size = resampled_data.size()[0]  
         real_data = real_data.float()
-        input_cropped1 = torch.FloatTensor(batch_size, opt.pnum, 3)
+        input_cropped1 = torch.FloatTensor(batch_size, opt.pnum, 3) #(6,2048,3)
 
         input_cropped1 = input_cropped1.data.copy_(resampled_data)
         resampled_data = torch.unsqueeze(resampled_data, 1)
-        input_cropped1 = torch.unsqueeze(input_cropped1, 1)  # input_cropped1.shape = [24, 1, 2024, 3]
+        input_cropped1 = torch.unsqueeze(input_cropped1, 1)  # input_cropped1.shape = [6, 1, 2024, 3] # can remove
 
-        label.resize_([batch_size, 1]).fill_(real_label)
+        label.resize_([batch_size, 1]).fill_(real_label) #(6,1)
         if resampled_data.size()[0] < opt.batchSize: continue # only 6 batch size 
         # resampled_data = resampled_data.to(device)  # resampled_data.shape = [6, 1, 2048, 3]
+        
         real_data = real_data.to(device)  # real_data.shape = [6, 1, 512, 3]
         input_cropped1 = input_cropped1.to(device)  # input_cropped1.shape = [6, 1, 2048, 3]
         label = label.to(device)  # real label construction done
         
         # obtain data for the two channels
         real_data = Variable(real_data, requires_grad=True) # real_data with fine
-        real_data = torch.squeeze(real_data, 1)  # [24, 512, 3]
-        real_data_key1_idx = utils.farthest_point_sample(real_data, 128, RAN=False) # key_1 for coarse
-        real_data_key1 = utils.index_points(real_data, real_data_key1_idx)
-        real_data_key1 = Variable(real_data_key1, requires_grad=True)  # [24, 128, 3]		
-        input_cropped1 = torch.squeeze(input_cropped1, 1)
-        input_cropped1 = Variable(input_cropped1, requires_grad=True)  # [24, 2048, 3]
+        real_data = torch.squeeze(real_data, 1)  # [6, 1024, 3]
+        real_data_coarse_idx = utils.farthest_point_sample(real_data, 128, RAN=False) # key_1 for coarse
+        real_data_coarse = utils.index_points(real_data, real_data_coarse_idx)
+        real_data_coarse = Variable(real_data_coarse, requires_grad=True)  # [6, 128, 3]		
+        
+        input_cropped1 = torch.squeeze(input_cropped1, 1) # can remove undoes 233
+        input_cropped1 = Variable(input_cropped1, requires_grad=True)  # [6, 2048, 3]
   
         
         # Start Distillation()
-        gen_net = gen_net.train()
+        Student_gen = Student_gen.train()
         dis_net = dis_net.train()
         
         # update discriminator by passing real data
@@ -263,13 +262,14 @@ for epoch in tqdm(resume_epoch, opt.niter):
         dis_err_real = criterion(real_out, label)
         dis_err_real.backward()
         
-        # generate Fake pointclouds or current genrator prediction
-        fake_center1, fake_fine, conv11, conv12= gen_net(input_cropped1)
+        # generate Fake pointclouds or current genrator prediction:Student
+        fake_center1, fake_fine, conv11, conv12,latent_vector_student= Student_gen(input_cropped1)
         # feature_loss = criterion_layer1(conv11, conv21) + criterion_layer2(conv12, conv22) \
         
         # for teacher generator
-        gen_fake_t = Distiller.teacher_gen()
-        fake_out_t = dis_net(gen_fake_t)
+        fake_coarse_teacher, fake_fine_teacher, conv11_teacher, \
+        conv12_teacher,latent_vector_teacher= Distiller.teacher_gen(input_cropped1)
+        fake_out_t = dis_net(fake_coarse_teacher)
         
 
         # pass fake data through discriminator
@@ -285,7 +285,7 @@ for epoch in tqdm(resume_epoch, opt.niter):
         
         # update generator objective max(log(D(G(z))))
         # Try to fool the discriminator
-        gen_net.zero_grad()
+        Student_gen.zero_grad()
         label.data.fill_(real_label)
         fake_out = dis_net(fake_fine)
         errG_D = criterion(fake_out, label)  # discriminator loss of fake points
@@ -296,10 +296,14 @@ for epoch in tqdm(resume_epoch, opt.niter):
         # double check these dimensions
         errG_l2 = criterion_PointLoss(torch.squeeze(fake_fine, 1), torch.squeeze(real_data, 1)) \
                   + lam1 * criterion_PointLoss(fake_center1, # coarse channel
-                                               real_data_key1) #+ wtl_mse * feature_loss #+ wtl_exp * expansion_loss
+                                               real_data_coarse) #+ wtl_mse * feature_loss #+ wtl_exp * expansion_loss
         
         errG = (1 - opt.wtl2) * errG_D + opt.wtl2 * errG_l2  # original # need to be readjusted. for 
-        errG.backward()
+        
+        gen_batch_loss = -(1 - Distiller.alpha) * errG+ \
+                             Distiller.alpha * Distiller.DistillerLoss(latent_vector_student, latent_vector_teacher)
+        
+        gen_batch_loss.backward()
         optimizerG.step()
         print('Epoch[%d/%d] Batch[%d/%d] D_loss: %.4f G_loss: %.4f errG: %.4f errG_D: %.4f errG_l2: %.4f'
               % (epoch, opt.niter, i, len(train_loader),
@@ -329,8 +333,8 @@ for epoch in tqdm(resume_epoch, opt.niter):
             input_cropped1 = torch.squeeze(input_cropped1, 1)
             input_cropped1 = Variable(input_cropped1, requires_grad=False)
             
-            gen_net.eval()
-            _, fake_fine, conv11, conv12= gen_net(input_cropped1)
+            Student_gen.eval()
+            _, fake_fine, conv11, conv12= Student_gen(input_cropped1)
             
             CD_loss = criterion_PointLoss(torch.squeeze(fake_fine, 1), torch.squeeze(target, 1))
             

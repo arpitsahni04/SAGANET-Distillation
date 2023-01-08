@@ -390,5 +390,5 @@ def get_graph_feature(x, k=20, idx=None):
 	# l2_dist = torch.cdist(feature, x, p=2)
 	# import ipdb; ipdb.set_trace()
 	# feature_cat = torch.cat((feature-x, l2_dist), dim=3)
-)	feature = torch.cat((feature-x, x), dim=3).permute(0, 3, 1, 2).contiguous()
+	feature = torch.cat((feature-x, x), dim=3).permute(0, 3, 1, 2).contiguous()
 	return feature

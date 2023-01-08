@@ -165,7 +165,7 @@ def farthest_point_sample(xyz, npoint,RAN = True):
         farthest = torch.randint(0, 1, (B,), dtype=torch.long).to(device)
     else:
         farthest = torch.randint(1, 2, (B,), dtype=torch.long).to(device)
-    
+        # b/w 1,2 or 0,1
     batch_indices = torch.arange(B, dtype=torch.long).to(device)
     for i in range(npoint):
         centroids[:, i] = farthest
@@ -173,7 +173,7 @@ def farthest_point_sample(xyz, npoint,RAN = True):
         dist = torch.sum((xyz - centroid) ** 2, -1)
         mask = dist < distance
         distance[mask] = dist[mask]
-        farthest = torch.max(distance, -1)[1]
+        farthest = torch.max(distance, -1)[1] # index of max value
     return centroids
 
 if __name__=='__main__':

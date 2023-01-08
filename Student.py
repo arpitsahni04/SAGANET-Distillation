@@ -89,6 +89,7 @@ class Student_SAGANET(nn.Module):
     def forward(self,x):
         # get latent features from encoder
         x, conv11, conv12= self.latent_features(x)
+        latent_vector = x
         x_2 = F.relu(self.fc2(x))# 512	v	# 2nd Channel coarse
         # x_2 = self.fc2_1(x_2)
         x_2 = x_2.reshape(-1, 128, 64)
@@ -105,4 +106,4 @@ class Student_SAGANET(nn.Module):
         x = x + x_2  # 128x4x3
         x = x.reshape(-1, self.crop_point_num, 3)  
         print("Student Decoder Channel Shape",x_2.squeeze().shape, x.shape)
-        return x_2.squeeze(), x, conv11, conv12
+        return x_2.squeeze(), x, conv11, conv12,latent_vector
