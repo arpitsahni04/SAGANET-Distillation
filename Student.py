@@ -20,14 +20,15 @@ class Feature_Extractor_Student(nn.Module):
         self.k = k # ? for nearest neighbhor?
         self.emb_dims = emb_dims # output of Feature Extractor 
          # adjust intermediate
-        self.conv1 = nn.Sequential(nn.Conv2d(6, int(128* scale_encoder), kernel_size=1, bias=False),
-                            nn.BatchNorm2d(int(128* scale_encoder)),
+        self.conv1 = nn.Sequential(nn.Conv2d(6, int(256 * scale_encoder), kernel_size=1, bias=False),
+                            nn.BatchNorm2d(int(256 * scale_encoder)),
                             nn.LeakyReLU(negative_slope=0.2))
         
-        self.conv2 = nn.Sequential(nn.Conv2d(int(128*4* scale_encoder),int(128*4* scale_encoder),  kernel_size=1, bias=False),
+        self.conv2 = nn.Sequential(nn.Conv2d(int(128 * 4 * scale_encoder),int(512 * scale_encoder),  kernel_size=1, bias=False),
                             nn.BatchNorm2d(int(scale_encoder*128*4)),
                             nn.LeakyReLU(negative_slope=0.2))
-        self.conv3 =  nn.Sequential(nn.Conv2d(int(512 * 2*scale_encoder), self.emb_dims, kernel_size=1, bias=False),
+        
+        self.conv3 =  nn.Sequential(nn.Conv2d(int(512 * 2 * scale_encoder), self.emb_dims, kernel_size=1, bias=False),
                                    nn.BatchNorm2d(self.emb_dims),
                                    nn.LeakyReLU(negative_slope=0.2))
         self._attention6 = Attention(1024) # Attention Layer Unmodified
@@ -38,17 +39,19 @@ class Feature_Extractor_Student(nn.Module):
         x = x.permute(0, 2, 1)
         x = get_graph_feature(x, k=self.k)
         x = self.conv1(x)
-        
         x1 = x.max(dim=-1, keepdim=False)[0]
+        
         x = get_graph_feature(x1, k=self.k)
         x = self.conv2(x)
-        
         x2 = x.max(dim=-1, keepdim=False)[0]
+        
         x = get_graph_feature(x2, k=self.k)
         x = self.conv3(x)
         x3 = x.max(dim=-1, keepdim=False)[0]
+        
         x3 = self._attention6(x3)
         x3 = torch.squeeze(self.maxpool(x3), 2)
+        
         output = x3.view(batch_size, -1, 1)
         return output, x1, x2 # x1, x2 are for Interchannel and output is for CLS
 

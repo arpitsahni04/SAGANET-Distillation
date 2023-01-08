@@ -219,14 +219,14 @@ class FullDataset(data.Dataset):
             cloud = np.dot(cloud, cam_wrt_obj[:3, :3].T) + cam_wrt_obj[:3, 3] 
 
             cloud = resample_pcd(cloud, self.config.partial_pcd_num)
-            # cloud_pcd = o3d.geometry.PointCloud()
-            # cloud_pcd.points = o3d.utility.Vector3dVector(cloud)
-            # o3d.io.write_point_cloud("/home/arpitsah/Desktop/Projects Fall-22/ShapeAware-Pipeline/completion/dataset/modelpoints_new/cloudpoints_new/cloud_{}.ply".format(index), cloud_pcd)
+            cloud_pcd = o3d.geometry.PointCloud()
+            cloud_pcd.points = o3d.utility.Vector3dVector(cloud)
+            o3d.io.write_point_cloud("/home/arpitsah/Desktop/Projects Fall-22/ShapeAware-Pipeline/completion/dataset/modelpoints_new/cloudpoints_new/cloud_points{}.ply".format(index), cloud_pcd)
 
             model_points = resample_pcd(model_points, self.config.complete_pcd_num) # add to 189
-            # model_points_pcd = o3d.geometry.PointCloud()
-            # model_points_pcd.points = o3d.utility.Vector3dVector(model_points)
-            # o3d.io.write_point_cloud("/home/arpitsah/Desktop/Projects Fall-22/ShapeAware-Pipeline/completion/dataset/modelpoints_new/model_points_{}.ply".format(index), model_points_pcd)
+            model_points_pcd = o3d.geometry.PointCloud()
+            model_points_pcd.points = o3d.utility.Vector3dVector(model_points)
+            o3d.io.write_point_cloud("/home/arpitsah/Desktop/Projects Fall-22/ShapeAware-Pipeline/completion/dataset/modelpoints_new/model_points_{}.ply".format(index), model_points_pcd)
             
             return cloud, model_points
 
