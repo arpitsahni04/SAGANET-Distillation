@@ -241,3 +241,4 @@ class Decoder(nn.Module):
 		
 		return x_2.squeeze(), x, conv11, conv12
 
+

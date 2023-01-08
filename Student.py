@@ -9,8 +9,42 @@ import torch
 from pointnet_util import get_graph_feature
 from Attention.Cluster_Attention import MultiHeadAttention as MHA
 from Attention.positionwiseFeedForward import PositionwiseFeedForward
-from Encoder1024 import Attention
 
+
+class Attention(nn.Module):
+
+	def __init__(self, Fea, q=1, v=1, h=1, dropout = 0.3):
+		super(Attention, self).__init__()
+		# attention
+		# eight heads for now
+		self.q, self.v, self.h = q, v, h
+		self.dropout = dropout
+		# input should be (batch, cluster, feature)
+		# (b, N, feature)
+		self.Fea = Fea
+
+		self.skipAttention = MHA(self.Fea, self.q, self.v, self.h)
+		self.feedForward = PositionwiseFeedForward(self.Fea)
+		self.layerNorm1 = nn.LayerNorm(self.Fea)
+		self.layerNorm2 = nn.LayerNorm(self.Fea)
+		self.dropout = nn.Dropout(p=self.dropout)
+
+	def forward(self, x):
+		# print('here-------------------------')
+		# print(x.shape)
+		x = x.permute(0, 2, 1)
+		residual = x
+		x = self.skipAttention(query = x, key = x, value = x)
+		x = self.dropout(x)
+		x = self.layerNorm1(x + residual)
+
+		# Feed forward
+		residual = x
+		x = self.feedForward(x)
+		x = self.dropout(x)
+		x = self.layerNorm2(x + residual)
+		x = x.permute(0, 2, 1)
+		return x
 
 
 class Feature_Extractor_Student(nn.Module):

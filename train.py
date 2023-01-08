@@ -24,7 +24,8 @@ from torch.utils.tensorboard import SummaryWriter
 # expansion penalty
 # sys.path.append("expansion_penalty/")
 # import expansion_penalty_module as expansion
-
+import torch
+torch.cuda.empty_cache()
 config = Configuration('train')
 torch.backends.cudnn.enabled = False
 parser = argparse.ArgumentParser()

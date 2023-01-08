@@ -54,6 +54,10 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 if __name__=="__main__":
+    # import osAps98jan@@931@
+    
+    # os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb=256'
+
     torch.cuda.empty_cache() # clean cuda cache
     
     config = Configuration('train')
@@ -204,7 +208,7 @@ if __name__=="__main__":
     dis_loss = []
     gen_loss = []
 
-for epoch in tqdm(resume_epoch, opt.niter):
+for epoch in tqdm(range(resume_epoch, opt.niter)):
     if epoch < 30:
         lam1 = 0.01
         lam2 = 0.02
@@ -263,7 +267,8 @@ for epoch in tqdm(resume_epoch, opt.niter):
         dis_err_real.backward()
         
         # generate Fake pointclouds or current genrator prediction:Student
-        fake_center1, fake_fine, conv11, conv12,latent_vector_student= Student_gen(input_cropped1)
+        fake_center1, fake_fine, conv11, conv12, \
+        latent_vector_student= Student_gen(input_cropped1)
         # feature_loss = criterion_layer1(conv11, conv21) + criterion_layer2(conv12, conv22) \
         
         # for teacher generator
@@ -334,7 +339,7 @@ for epoch in tqdm(resume_epoch, opt.niter):
             input_cropped1 = Variable(input_cropped1, requires_grad=False)
             
             Student_gen.eval()
-            _, fake_fine, conv11, conv12= Student_gen(input_cropped1)
+            _, fake_fine, conv11, conv12,latent_vector_student= Student_gen(input_cropped1)
             
             CD_loss = criterion_PointLoss(torch.squeeze(fake_fine, 1), torch.squeeze(target, 1))
             
@@ -368,18 +373,18 @@ for epoch in tqdm(resume_epoch, opt.niter):
         
         if loss_pg == first_min:
             torch.save({'epoch': epoch + 1,
-                        'state_dict': gen_net.state_dict()},
-                       'Trained_Model_1/gen_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
+                        'state_dict': Student_gen.state_dict()},
+                       'Trained_Student_Model_1/gen_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
             torch.save({'epoch': epoch + 1,
                         'state_dict': dis_net.state_dict()},
-                       'Trained_Model_1/dis_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
+                       'Trained_Student_Model_1/dis_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
         elif loss_gp == second_min:
             torch.save({'epoch': epoch + 1,
-                        'state_dict': gen_net.state_dict()},
-                       'Trained_Model_1/gen_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
+                        'state_dict': Student_gen.state_dict()},
+                       'Trained_Student_Model_1/gen_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
             torch.save({'epoch': epoch + 1,
                         'state_dict': dis_net.state_dict()},
-                       'Trained_Model_1/dis_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
+                       'Trained_Student_Model_1/dis_net_' + opt.class_choice + '_Attention' + str(epoch) + '.pth')
         
         print('best so far (pg): ', first_min, LOSS_gp[first_idx])
         print('best so far (gp): ', LOSS_pg[second_idx], second_min)
