@@ -110,6 +110,7 @@ def weights_init_normal(m):
 
 
 if USE_CUDA:
+
     print("Using", torch.cuda.device_count(), "GPUs")
     gen_net = torch.nn.DataParallel(gen_net)
     gen_net.to(device)
