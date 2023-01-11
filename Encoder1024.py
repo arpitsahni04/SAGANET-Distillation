@@ -202,11 +202,11 @@ class Decoder(nn.Module):
 		super(Decoder, self).__init__()
 		self.crop_point_num = crop_point_num
 		self.latentfeature = Encoder(num_points)
-		self.fc1 = nn.Linear(1024, 1024)
-		self.fc2 = nn.Linear(1024, 512)
-		
-		self.fc1_1 = nn.Linear(1024, 128 * self.crop_point_num)
-		self.fc2_1 = nn.Linear(512, 64 * 128)
+		self.fc1 = nn.Linear(1024, 1024) #x
+		self.fc2 = nn.Linear(1024, 512) #x_2
+		self.latent_vector = None
+		self.fc1_1 = nn.Linear(1024, 128 * self.crop_point_num) #x
+		self.fc2_1 = nn.Linear(512, 64 * 128) #x_2
 		
 		self.conv1_1 = torch.nn.Conv1d(self.crop_point_num, 512, 1)
 		self.conv1_2 = torch.nn.Conv1d(512, 256, 1)
@@ -216,7 +216,7 @@ class Decoder(nn.Module):
 	
 	def forward(self, x):
 		x, conv11, conv12= self.latentfeature(x)
-		
+		self.latent_vector = x
 		x = F.relu(self.fc1(x))  # 1024
 		x_2 = F.relu(self.fc2(x))  # 512
 		
@@ -230,14 +230,14 @@ class Decoder(nn.Module):
 		x = F.relu(self.conv1_2(x))
 		x = self.conv1_3(x)  # 12x128
 		x = x.reshape(-1, 128, int(self.crop_point_num / 128), 3)
-		
+		print("Teacher x",x.shape)
 		x_2 = x_2.reshape(-1, 128, 1, 3)
-		
+		print("Teacher x_2",x_2.shape)
 		# print(x.shape) #(6, 128, 4, 3)
 		# print(x_2.shape) #(6, 128, 1, 3)
 		
 		x = x + x_2  # 128x4x3
 		x = x.reshape(-1, self.crop_point_num, 3)  # 512x3 Local Points
-		
-		return x_2.squeeze(), x, conv11, conv12
+		print("Teacher Decoder Channel Shape",x_2.squeeze().shape, x.shape)
+		return x_2.squeeze(), x, conv11, conv12,self.latent_vector 
 

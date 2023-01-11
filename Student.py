@@ -100,7 +100,7 @@ class Encoder_Student(nn.Module):
         out_1, conv11, conv12 = self.fe1(x)  # (batch_size, 512, 3) || (batch_size, 1920)
         # out = torch.cat((out_1), 2)  # (batch_size, 1920, 2)
         # print(out.shape)
-        out = out_1.view(-1, 1024)  # (batch_size, 1920
+        out = out_1.view(-1, 1024)  # (batch_size, 1024)
         return out, conv11, conv12
 
 class Student_SAGANET(nn.Module):
@@ -109,35 +109,38 @@ class Student_SAGANET(nn.Module):
         self.crop_point_num = crop_point_num 
         # 3 Graph conv, self attention and Pool 
         self.latent_features = Encoder_Student(num_points,scale_encoder)
-        
+        self.scale_decoder = scale_decoder
+        self.scale_encoder = scale_encoder
+        self.latent_vector = None
         # Coarse Layers
-        self.fc1 = nn.Linear(1024,int( 128 * self.crop_point_num*scale_decoder)) #de/2, de = 2048
-        self.conv1_1 = torch.nn.Conv1d(int(self.crop_point_num* scale_decoder),int( 256 * scale_decoder), 1)
-        self.conv1_2 = torch.nn.Conv1d(int(256 * scale_decoder), int((self.crop_point_num * 3) / 128), 1) # (512,48)
+        self.fc1 = nn.Linear(1024,int( 128 * self.crop_point_num*scale_decoder)) #x,de/2
+        self.conv1_1 = torch.nn.Conv1d(int(self.crop_point_num*scale_decoder),int( 512 * scale_decoder), 1)
+        self.conv1_2 = torch.nn.Conv1d(int(512 * scale_decoder), int((self.crop_point_num * 3) / 128), 1) # (512,48)
         
         # Fine Layers
-        self.fc2 = nn.Linear(1024, int(64 * 128*scale_decoder)) #de/4
+        self.fc2 = nn.Linear(int( 128 * self.crop_point_num*scale_decoder), int(64 * 128*scale_decoder)) #x_2,de/4
         # self.fc2_1 = nn.Linear(512, 64 * 128)
         self.conv2_1 = torch.nn.Conv1d(int(128*scale_decoder), 6, 1)
-    
+
     def forward(self,x):
         # get latent features from encoder
         x, conv11, conv12= self.latent_features(x)
-        latent_vector = x
+        self.latent_vector = x
+        x = F.relu(self.fc1(x))  # 1024
         x_2 = F.relu(self.fc2(x))# 512	v	# 2nd Channel coarse
         # x_2 = self.fc2_1(x_2)
-        x_2 = x_2.reshape(-1, 128, 64)
+        x_2 = x_2.reshape(-1, int(128*self.scale_decoder), 64)
         x_2 = self.conv2_1(x_2)
         
         #1st Channel fine
-        x = F.relu(self.fc1(x))  # 1024
-        x = F.relu(self.conv1_1(x))
+        x = x.reshape(-1, int(self.crop_point_num*self.scale_decoder), 128)
+        x = F.relu(self.conv1_1(x)) # in-1024, out- 512*sc
         x = self.conv1_2(x)  # 12x128
         x = x.reshape(-1, 128, int(self.crop_point_num / 128), 3)
-        
+        print("Student x",x.shape)
         x_2 = x_2.reshape(-1, 128, 1, 3)
-
+        print("Student x_2",x_2.shape)
         x = x + x_2  # 128x4x3
         x = x.reshape(-1, self.crop_point_num, 3)  
         print("Student Decoder Channel Shape",x_2.squeeze().shape, x.shape)
-        return x_2.squeeze(), x, conv11, conv12,latent_vector
+        return x_2.squeeze(), x, conv11, conv12,self.latent_vector
