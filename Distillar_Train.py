@@ -23,14 +23,15 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Distil:
-    def __init__ (self,opt,teacher_net_trained):
+    def __init__ (self,opt,teacher_net_trained,device):
         
-        self.teacher_gen =  Decoder(opt.point_scales_list[0], opt.crop_point_num) # set teacher gen to eval mode
-        state_dict  = torch.load(teacher_net_trained,map_location="cpu")
-        self.teacher_gen.load_state_dict(state_dict, strict=False)
-        self.teacher_gen
-
         self.Student_gen =  Student_SAGANET(opt.point_scales_list[0], opt.crop_point_num)
+
+        self.teacher_gen =  Decoder(opt.point_scales_list[0], opt.crop_point_num) # set teacher gen to eval mode
+        state_dict  = torch.load(teacher_net_trained, map_location=device)
+        self.teacher_gen.load_state_dict(state_dict, strict=False)
+
+
         self.Discriminator = D_net(opt.crop_point_num)
         self.alpha = opt.alpha_kd
         self.Student_Loss = PointLoss()
@@ -115,9 +116,9 @@ if __name__=="__main__":
     USE_CUDA = True
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # load trained teacher model
-    teacher_path = os.path.join(opt.save_model_dir, 'gen_net_Table_Attention110.pth') # find and save model in checkpoints
+    teacher_path = os.path.join(opt.save_model_dir,"Teacher_net" ,'gen_net_Table_Attention110.pth') # find and save model in checkpoints
     
-    Distiller = Distil(opt,teacher_path)
+    Distiller = Distil(opt,teacher_path,device)
     Distiller.teacher_gen.to(device)
     Distiller.teacher_gen.eval()
     # sys.exit()

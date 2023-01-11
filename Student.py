@@ -6,14 +6,14 @@ from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
 import torch
-from pointnet_util import get_graph_feature
+from pointnet_util import PointNetSetAbstraction, get_graph_feature
 from Attention.Cluster_Attention import MultiHeadAttention as MHA
 from Attention.positionwiseFeedForward import PositionwiseFeedForward
 
 
 class Attention(nn.Module):
 
-	def __init__(self, Fea, q=1, v=1, h=1, dropout = 0.3):
+	def __init__(self, Fea, q=1, v=1, h=1, dropout=0.3):
 		super(Attention, self).__init__()
 		# attention
 		# eight heads for now
@@ -108,19 +108,19 @@ class Student_SAGANET(nn.Module):
         super(Student_SAGANET,self).__init__()
         self.crop_point_num = crop_point_num 
         # 3 Graph conv, self attention and Pool 
-        self.latent_features = Encoder_Student(num_points,scale_encoder)
         self.scale_decoder = scale_decoder
         self.scale_encoder = scale_encoder
+        self.latent_features = Encoder_Student(num_points,self.scale_encoder)
         self.latent_vector = None
         # Coarse Layers
-        self.fc1 = nn.Linear(1024,int( 128 * self.crop_point_num*scale_decoder)) #x,de/2
-        self.conv1_1 = torch.nn.Conv1d(int(self.crop_point_num*scale_decoder),int( 512 * scale_decoder), 1)
-        self.conv1_2 = torch.nn.Conv1d(int(512 * scale_decoder), int((self.crop_point_num * 3) / 128), 1) # (512,48)
+        self.fc1 = nn.Linear(1024,int( 128 * self.crop_point_num*self.scale_decoder)) #x,de/2
+        self.conv1_1 = torch.nn.Conv1d(int(self.crop_point_num*self.scale_decoder),int( 512 *self.scale_decoder), 1)
+        self.conv1_2 = torch.nn.Conv1d(int(512 *self.scale_decoder), int((self.crop_point_num * 3) / 128), 1) # (512,48)
         
         # Fine Layers
-        self.fc2 = nn.Linear(int( 128 * self.crop_point_num*scale_decoder), int(64 * 128*scale_decoder)) #x_2,de/4
+        self.fc2 = nn.Linear(int( 128 * self.crop_point_num*self.scale_decoder), int(64 * 128*self.scale_decoder)) #x_2,de/4
         # self.fc2_1 = nn.Linear(512, 64 * 128)
-        self.conv2_1 = torch.nn.Conv1d(int(128*scale_decoder), 6, 1)
+        self.conv2_1 = torch.nn.Conv1d(int(128*self.scale_decoder), 6, 1)
 
     def forward(self,x):
         # get latent features from encoder
@@ -143,4 +143,5 @@ class Student_SAGANET(nn.Module):
         x = x + x_2  # 128x4x3
         x = x.reshape(-1, self.crop_point_num, 3)  
         print("Student Decoder Channel Shape",x_2.squeeze().shape, x.shape)
+        print(self.scale_encoder,self.scale_decoder)
         return x_2.squeeze(), x, conv11, conv12,self.latent_vector
