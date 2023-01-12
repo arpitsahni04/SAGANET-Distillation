@@ -270,6 +270,7 @@ for epoch in tqdm(range(resume_epoch, opt.niter)):
         # update discriminator by passing real data
         dis_net.zero_grad()
         real_data = torch.unsqueeze(real_data, 1)
+        
         real_out = dis_net(real_data)
         dis_err_real = criterion(real_out, label)
         dis_err_real.backward()
@@ -282,7 +283,8 @@ for epoch in tqdm(range(resume_epoch, opt.niter)):
         # for teacher generator
         fake_coarse_teacher, fake_fine_teacher, conv11_teacher, \
         conv12_teacher,latent_vector_teacher= Distiller.teacher_gen(input_cropped1)
-        fake_out_t = dis_net(fake_coarse_teacher)
+        # fake_coarse_teacher = torch.unsqueeze(fake_coarse_teacher, 1)
+        # fake_out_t = dis_net(fake_coarse_teacher)
         
 
         # pass fake data through discriminator
@@ -312,9 +314,9 @@ for epoch in tqdm(range(resume_epoch, opt.niter)):
                                                real_data_coarse) #+ wtl_mse * feature_loss #+ wtl_exp * expansion_loss
         
         errG = (1 - opt.wtl2) * errG_D + opt.wtl2 * errG_l2  # original # need to be readjusted. for 
-        
-        gen_batch_loss = -(1 - Distiller.alpha) * errG+ \
-                             Distiller.alpha * Distiller.DistillerLoss(latent_vector_student, latent_vector_teacher)
+        Distill_loss =( Distiller.DistillerLoss(latent_vector_student, latent_vector_teacher))
+        gen_batch_loss = (1 - Distiller.alpha) * errG+ \
+                             Distiller.alpha *Distill_loss
         
         gen_batch_loss.backward()
         optimizerG.step()

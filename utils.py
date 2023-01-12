@@ -4,7 +4,7 @@
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-
+from torch.nn.functional import cosine_similarity
 def draw_result(lst_iter, lst_loss, title):
     plt.plot(lst_iter, lst_loss, '-b', label='training_loss')
 
@@ -55,7 +55,7 @@ def draw_result_pggp(lst_iter, lst_loss1, lst_loss2, title, class_choice):
     plt.xlabel("epochs")
     
     # save image
-    plt.savefig('training_plots_1/' + class_choice + '_Attention' + ".png")  # should before show method
+    plt.savefig('training_plots_1/Student' + class_choice + '_Attention' + ".png")  # should before show method
 
 def array2samples_distance(array1, array2):
     """
@@ -122,8 +122,9 @@ class LatentDistiller_Loss(nn.Module):
         super(LatentDistiller_Loss,self).__init__()
         
     def forward(self,latent_student,latent_teacher):
-        cos = - nn.CosineSimilarity(dim =1,eps = 1e-6)
-        return 1 -cos(latent_student,latent_teacher)
+         ans = 1 -cosine_similarity(latent_student,latent_teacher,-1)
+         ans = ans.mean()
+         return ans
 
 def distance_squre(p1,p2):
     tensor=torch.FloatTensor(p1)-torch.FloatTensor(p2)

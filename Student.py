@@ -104,7 +104,7 @@ class Encoder_Student(nn.Module):
         return out, conv11, conv12
 
 class Student_SAGANET(nn.Module):
-    def __init__ (self,num_points,crop_point_num,scale_decoder = 0.125,scale_encoder = 0.125):
+    def __init__ (self,num_points,crop_point_num,scale_decoder = 0.1875,scale_encoder = 0.1875):
         super(Student_SAGANET,self).__init__()
         self.crop_point_num = crop_point_num 
         # 3 Graph conv, self attention and Pool 
@@ -137,11 +137,11 @@ class Student_SAGANET(nn.Module):
         x = F.relu(self.conv1_1(x)) # in-1024, out- 512*sc
         x = self.conv1_2(x)  # 12x128
         x = x.reshape(-1, 128, int(self.crop_point_num / 128), 3)
-        print("Student x",x.shape)
+        # print("Student x",x.shape)
         x_2 = x_2.reshape(-1, 128, 1, 3)
-        print("Student x_2",x_2.shape)
+        # print("Student x_2",x_2.shape)
         x = x + x_2  # 128x4x3
         x = x.reshape(-1, self.crop_point_num, 3)  
-        print("Student Decoder Channel Shape",x_2.squeeze().shape, x.shape)
+        # print("Student Decoder Channel Shape",x_2.squeeze().shape, x.shape)
         print(self.scale_encoder,self.scale_decoder)
         return x_2.squeeze(), x, conv11, conv12,self.latent_vector
