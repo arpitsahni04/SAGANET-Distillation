@@ -315,6 +315,7 @@ for epoch in tqdm(range(resume_epoch, opt.niter)):
         
         errG = (1 - opt.wtl2) * errG_D + opt.wtl2 * errG_l2  # original # need to be readjusted. for 
         Distill_loss =( Distiller.DistillerLoss(latent_vector_student, latent_vector_teacher))
+        # Need To normalize Chamfer Loss and implement gradient penalty
         gen_batch_loss = (1 - Distiller.alpha) * errG+ \
                              Distiller.alpha *Distill_loss
         

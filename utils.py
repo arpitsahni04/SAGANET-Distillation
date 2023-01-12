@@ -124,7 +124,7 @@ class LatentDistiller_Loss(nn.Module):
     def forward(self,latent_student,latent_teacher):
          ans = 1 -cosine_similarity(latent_student,latent_teacher,-1)
          ans = ans.mean()
-         return ans
+         return ans/2.0
 
 def distance_squre(p1,p2):
     tensor=torch.FloatTensor(p1)-torch.FloatTensor(p2)
