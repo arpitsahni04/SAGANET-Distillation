@@ -127,6 +127,13 @@ if __name__=="__main__":
 
     count_student = count_parameters(Distiller.Student_gen) 
     count_teacher = count_parameters(Distiller.teacher_gen) 
+    # for name, param in Distiller.Student_gen.named_parameters():
+    #     print(name, param.numel())
+    # print("\nTeacher\n")
+    # for name, param in Distiller.teacher_gen.named_parameters():
+    #     print(name, param.numel())
+    
+    
     
     print('number of parameters in teacher ', count_teacher)
     print('number of parameters in student', count_student)

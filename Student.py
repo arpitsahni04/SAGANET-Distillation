@@ -104,7 +104,7 @@ class Encoder_Student(nn.Module):
         return out, conv11, conv12
 
 class Student_SAGANET(nn.Module):
-    def __init__ (self,num_points,crop_point_num,scale_decoder = 0.5,scale_encoder = 0.5):
+    def __init__ (self,num_points,crop_point_num,scale_decoder = 0.125,scale_encoder = 0.125):
         super(Student_SAGANET,self).__init__()
         self.crop_point_num = crop_point_num 
         # 3 Graph conv, self attention and Pool 
